@@ -45,3 +45,25 @@ docker run -p 6379:6379 redis
 docker run --name nacos-standalone -e MODE=standalone -e JVM_XMS=512m -e JVM_XMX=512m -e JVM_XMN=256m -p 8848:8848 -p 9848:9848 -p 9849:9849 -d nacos/nacos-server:latest --restart=always
 访问
 http://192.168.65.131:8848/nacos/index.html
+
+安装es
+#新建es的config配置文件夹
+mkdir -p /data/elasticsearch/config
+#新建es的data目录
+mkdir -p /data/elasticsearch/data
+#新建es的plugins目录
+mkdir -p /data/elasticsearch/plugins
+#给目录设置权限
+chmod 777 -R /data/elasticsearch
+#写入配置到elasticsearch.yml中， 下面的 > 表示覆盖的方式写入， >>表示追加的方式写入，但是要确保http.host: 0.0.0.0不能被写入多次
+echo "http.host: 0.0.0.0" >> /data/elasticsearch/config/elasticsearch.yml
+#安装es
+docker run --name elasticsearch -p 9200:9200 -p 9300:9300 \
+    -e "discovery.type=single-node" \
+  -e ES_JAVA_OPTS="-Xms128m -Xmx256m" \
+  -v /data/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+  -v /data/elasticsearch/data:/usr/share/elasticsearch/data \
+  -v /data/elasticsearch/plugins:/usr/share/elasticsearch/plugins \
+  -d elasticsearch:7.10.1
+//ip与虚拟机一致  版本也需一致
+docker run -d --name kibana -e ELASTICSEARCH_HOSTS="http://192.168.0.104:9200" -p 5601:5601 kibana:7.10.1
