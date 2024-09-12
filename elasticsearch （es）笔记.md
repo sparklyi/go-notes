@@ -279,6 +279,18 @@ GET demo/_search?q=test
 
 ##### JSON结构体查询 
 
+###### 全文查询
+
+`match_all` 匹配全部
+
+`match` 匹配 会自动分词 然后通过倒排索引进行匹配
+
+`match_phrase` 短语匹配 会分词 但要求全部匹配 且分词后顺序也需保持一致
+
+`multi_match`  多匹配查询 即多个字段的match查询，可以通过`^`提升权重
+
+`query_string`  可以在所有字段中查询 也可以使用`and` `or` 等实现复杂查询
+
 ```
 GET demo/_search
 {
@@ -291,15 +303,186 @@ GET user/_search
 {
   "query":{
     "match":{
-      "address": "Hutchinson Court" //会自动分词 然后通过倒排索引进行匹配
+      "address": "Hutchinson Court" //
+    }
+  }
+}
+----
+GET user/_search
+{
+  "query": {
+    "match_phrase": {
+      "address": "Hutchinson the Court" //
+    }
+  }
+}
+----
+GET resume/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "go",   //查询关键字go
+      "fields": ["title^2", "desc"] //从title和desc两个字段中查询,title权重*2
+    }
+  }
+}
+----
+GET user/_search
+{
+  "query":{
+    "query_string": {
+      "default_field": "address", //不指定则所有字段查询
+      "query": "Hutchinson AND Court" //等价于 match_phrase
+    }
+  }
+}
+
+```
+
+######  术语查询
+
+`term`不会对查询的信息进行分词处理 要求直接匹配
+
+**es会对写入的数据和查询数据进行分词+归一化**，此时的term如果查询的是会被分词的内容，那么是**没有结果**的，因为term会直接去es的表里查，不经过分词处理 但是表里是分过词的
+
+可以对有keyword类型的字段进行查询(解释在mapping映射)
+
+
+
+```sh
+GET user/_search
+{
+  "query": {
+    "term": {
+       //es将这个存储为了 "671" "bristol" "street" 三个词，并不存在"671 bristol street"
+      "address": "671 bristol street"
+      
+      "address": "Street" //es存储的只有street 即归一化后的词，不存在Street
+      "address": "street" //与es存储的一致
+    }
+  }
+}
+
+GET user/_search
+{
+  "query": {
+    "term": {
+      "address.keyword": "641 Royce Street"
     }
   }
 }
 ```
 
- 采用的是倒排索引，即在对文本进行分词后得到对应分词集合中的id 
+`range` 范围查询
 
-简单实现
+```sh
+GET user/_search
+{
+  "query":{
+    "range": {
+      "age": {
+        "gte": 20,
+        "lte": 30
+      }
+    }
+  }
+}
+```
+
+`exists`存在查询，是否存在某个字段
+
+```
+GET user/_search
+{
+  "query": {
+    "exists": {
+      "field": "test_field"
+    }
+  }
+}
+```
+
+`fuzzy`模糊查询，查询在设定字符串距离内的所有内容
+
+```go
+GET user/_search
+{
+  "query": {
+    "match": {
+      "address": {
+        "query": "Midison streat",  // Midison street 相差1  midison strea也相差1
+        "fuzziness": 1	//字符串相差距离为1
+      }
+    }
+  }
+}
+```
+
+###### 复合查询
+
+`bool`查询 包含`must` `should` `must_not`  `filter`四类
+
+> 1. must: 必须匹配,查询上下文,加分
+> 2. should: 应该匹配,查询上下文,加分
+> 3. must_not: 必须不匹配,过滤上下文,过滤
+> 4. filter: 必须匹配,过滤上下文,过滤
+
+```sh
+GET user/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {
+            "state" : "va"
+          }
+        }
+      ],
+      "should": [
+        {
+          "range": {
+            "age": {
+              "gte":20,
+              "lte": 25
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+             "city" : "salix"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "term": {
+            "address": "street"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+
+
+#### mapping 映射
+
+类型`text` 和 `keyword`的区别：
+
+>1. es自动推断时会为每个是text类型的field添加一个keyword类型
+>2. text类型会进行分词存储，而keyword类型不会进行分词，直接原文存储
+>3. 查询时可以通过field.keyword来完成一句话的搜索
+
+
+
+##### 倒排索引
+
+倒排索引，即在对文本进行分词后得到对应分词集合中的id 查询时直接获取对应词的集合的信息
 
 ```Go
 package main
@@ -365,7 +548,7 @@ POST _bulk //路径中有索引可以省略索引
 { "doc" : {"field2" : "value2"} }
 
 //路径中有索引可以省略索引
-POST demo/_bulk
+POST indexName/_bulk
 {"index":{"_id":"1"}}
 {"field":"val1"}
 ```
