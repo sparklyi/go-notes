@@ -402,7 +402,7 @@ GET user/_search
 }
 ```
 
-`fuzzy`模糊查询，查询在设定字符串距离内的所有内容
+`fuzzy`模糊查询，查询在设定字符串距离内的所有内容（通过增删改得到目标字符串的次数就是距离）
 
 ```go
 GET user/_search
@@ -478,9 +478,79 @@ GET user/_search
 >2. text类型会进行分词存储，而keyword类型不会进行分词，直接原文存储
 >3. 查询时可以通过field.keyword来完成一句话的搜索
 
+**定义索引中的字段的名称定义字段的数据类型**，比如字符串、数字、布尔**字段，倒排索引的相关配置**
+
+查看索引的mapping 
+
+```sh
+GET user
+```
+
+#### 
+
+#### 分词器
+
+内置分词器
+
+>Standard Analyzer - 默认分词器，按词切分，小写处理
+>Simple Analyzer - 按照非字母切分（符号被过滤），小写处理
+>Stop Analyzer - 小写处理，停用词过滤（the ，a，is）
+>Whitespace Analyzer - 按照空格切分，不转小写
+>Keyword Analyzer - 不分词，直接将输入当做输出
+>Patter Analyzer - 正则表达式，默认 \W+
+
+可以通过`_analyze`测试分词效果
+
+```go
+GET _analyze
+{
+  "analyzer": "standard",
+  "text": "Always believe that something wonderful thing is about to happen!"
+}
+//小写 会去掉符号 但不会去掉数字
+```
+
+```go
+GET _analyze
+{
+  "analyzer": "simple",
+  "text": "Always -1 believe that something wonderful thing is about to happen!"
+}
+//在standard的基础上会去掉数字
+```
+
+```go
+GET _analyze
+{
+  "analyzer": "stop",
+  "text": "Always  believe that something wonderful thing is about to happen!"
+}
+//is to 被去除
+```
+
+```go
+GET _analyze
+{
+  "analyzer": "whitespace",
+  "text": "Always -1 believe that something wonderful thing is about to happen!"
+}
+//只按照空格分词 其他不变
+```
+
+```go
+GET _analyze
+{
+  "analyzer": "keyword",
+  "text": "Always -1 believe that something wonderful thing is about to happen!"
+}
+//整句作为输入 不进行任何处理
+```
 
 
-##### 倒排索引
+
+
+
+#### 倒排索引
 
 倒排索引，即在对文本进行分词后得到对应分词集合中的id 查询时直接获取对应词的集合的信息
 
@@ -566,5 +636,45 @@ POST  _mget
 	]
 
 }
+```
+
+
+
+#### IK中文分词
+
+https://github.com/infinilabs/analysis-ik/releases/download/v7.10.1/elasticsearch-analysis-ik-7.10.1.zip
+
+版本保持一致
+
+解压拷贝到plugins目录下
+
+copy到/data/elasticsearch/plugins
+
+chmod 777 -R ik
+
+重启容器
+
+```go
+GET _analyze 
+{
+    "text":"中国科学技术大学",
+    "analyzer":"ik_smart" //智能分词   
+    "analyzer":"ik_max_word" //进行全部分词   
+}
+```
+
+##### 自定义分词
+
+```
+cd /data/elasticsearch/plugins/ik/config
+mkdir mydic
+cd mydic
+vi mydic.dic
+# 加入词汇
+vi mydic_stopword.dic
+# 加入停用词
+cd ..
+vi IKAnalyzer.cfg.xml
+重启docker容器
 ```
 
