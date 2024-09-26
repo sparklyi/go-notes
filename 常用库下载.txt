@@ -12,3 +12,4 @@ go get github.com/spf13/viper
 go get -u github.com/mojocn/base64Captcha 
 go get -u github.com/nacos-group/nacos-sdk-go/v2
 "github.com/mbobakov/grpc-consul-resolver"
+ github.com/apache/rocketmq-client-go/v2 v2.1.0-rc3

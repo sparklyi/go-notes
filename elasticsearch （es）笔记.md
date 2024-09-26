@@ -291,6 +291,8 @@ GET demo/_search?q=test
 
 `query_string`  可以在所有字段中查询 也可以使用`and` `or` 等实现复杂查询
 
+`terms` 等价mysql 的 in
+
 ```
 GET demo/_search
 {
@@ -468,6 +470,8 @@ GET user/_search
 }
 ```
 
+#### 分页
+
 
 
 #### mapping 映射
@@ -486,7 +490,7 @@ GET user/_search
 GET user
 ```
 
-#### 
+
 
 #### 分词器
 

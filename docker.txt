@@ -17,17 +17,33 @@ stable"
 ## 安装docker
  sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-增加镜像
-vi etc/docker/daemon.json
+vi /etc/docker/daemon.json
+
 
 {
-	"registry-mirrors": [
-        "https://hub.uuuadc.top", 
-        "https://docker.anyhub.us.kg", 
-        "https://dockerhub.jobcher.com",  
-        "https://docker.ckyl.me", 
-        "https://docker.awsl9527.cn"]
+"registry-mirrors": [
+   "https://docker.registry.cyou",
+   "https://docker-cf.registry.cyou",
+   "https://dockercf.jsdelivr.fyi",
+   "https://docker.jsdelivr.fyi",
+   "https://dockertest.jsdelivr.fyi",
+   "https://mirror.aliyuncs.com",
+   "https://dockerproxy.com",
+   "https://mirror.baidubce.com",
+   "https://docker.m.daocloud.io",
+   "https://docker.nju.edu.cn",
+   "https://docker.mirrors.sjtug.sjtu.edu.cn",
+   "https://docker.mirrors.ustc.edu.cn",
+   "https://mirror.iscas.ac.cn",
+   "https://docker.rainbond.cc"
+ ]
 }
+
+docker-compose安装
+wget https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-linux-x86_64
+mv docker-compose-linux-x86_64 /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+修改conf/broker 的地址
 
 docker安装组件
 docker pull hashicorp/consul
